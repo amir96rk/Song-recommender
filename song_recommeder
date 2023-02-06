@@ -1,0 +1,28 @@
+import turicreate as tc
+song_data = tc.SFrame('song_data.sframe')
+users = song_data['user_id'].unique()
+
+# Create a song recommender
+
+train_data,test_data = song_data.random_split(.8,seed=0)
+
+## Simple popularity_based recommender
+popularity_model = tc.popularity_recommender.create(train_data, user_id = 'user_id',item_id='song')
+
+## Use the popularity model to make some predictions
+popularity_model.recommend(users = [users[0]])
+
+## Build a song recommender with personalization
+personalized_model = tc.item_similarity_recommender.create(train_data,user_id = 'user_id',item_id = 'song')
+personalized_model.recommend(users = [users[0]])
+
+personalized_model.get_similar_items(['With Or Without You - U2'])
+
+## Quantitative comparison between the models
+model_performance = tc.recommender.util.compare_models(test_data, [popularity_model, personalized_model], user_sample=.05)
+
+## Group the data by artist and listen count
+group_by = song_data.groupby('artist', operations={'total_count': tc.aggregate.SUM('listen_count')})
+group_by.sort('total_count',ascending = False)
+
+
